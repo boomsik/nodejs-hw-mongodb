@@ -1,46 +1,61 @@
 const contactsService = require('../services/contacts');
+const ctrlWrapper = require('../utils/ctrlWrapper');
+const createError = require('http-errors');
 
 const getAllContacts = async (req, res) => {
-  try {
-    const contacts = await contactsService.getAllContacts();
-    res.json({
-      status: 200,
-      message: 'Successfully found contacts!',
-      data: contacts,
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 500,
-      message: 'Failed to fetch contacts',
-    });
-  }
+  const contacts = await contactsService.getAllContacts();
+  res.json({
+    status: 200,
+    message: 'Successfully found contacts!',
+    data: contacts,
+  });
 };
 
-const getContactById = async (req, res) => {
-  try {
-    const { contactId } = req.params;
-    const contact = await contactsService.getContactById(contactId);
+const createContact = async (req, res) => {
+  const newContact = await contactsService.createContact(req.body);
+  res.status(201).json({
+    status: 201,
+    message: 'Successfully created a contact!',
+    data: newContact,
+  });
+};
 
-    if (!contact) {
-      return res.status(404).json({
-        message: 'Contact not found',
-      });
-    }
-
-    res.json({
-      status: 200,
-      message: `Successfully found contact with id ${contactId}!`,
-      data: contact,
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 500,
-      message: 'Failed to fetch contact',
-    });
+const getContactById = async (req, res, next) => {
+  const contact = await contactsService.getContactById(req.params.contactId);
+  if (!contact) {
+    return next(createError(404, 'Contact not found'));
   }
+  res.json({
+    status: 200,
+    message: 'Successfully found contact!',
+    data: contact,
+  });
+};
+
+const updateContact = async (req, res) => {
+  const updatedContact = await contactsService.updateContact(
+    req.params.contactId,
+    req.body
+  );
+  res.json({
+    status: 200,
+    message: 'Successfully patched a contact',
+    data: updatedContact,
+  });
+};
+
+const deleteContact = async (req, res) => {
+  await contactsService.deleteContact(req.params.contactId);
+  res.json({
+    status: 200,
+    message: 'Contact deleted',
+  });
 };
 
 module.exports = {
-  getAllContacts,
-  getContactById,
+  getAllContacts: ctrlWrapper(getAllContacts),
+  createContact: ctrlWrapper(createContact),
+  getContactById: ctrlWrapper(getContactById),
+  updateContact: ctrlWrapper(updateContact),
+  deleteContact: ctrlWrapper(deleteContact),
 };
