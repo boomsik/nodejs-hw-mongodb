@@ -46,10 +46,7 @@ const updateContact = async (req, res) => {
 
 const deleteContact = async (req, res) => {
   await contactsService.deleteContact(req.params.contactId);
-  res.json({
-    status: 204,
-    message: 'Contact deleted',
-  });
+  res.status(204).send();
 };
 
 module.exports = {
