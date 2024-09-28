@@ -2,25 +2,6 @@ const contactsService = require('../services/contacts');
 const ctrlWrapper = require('../utils/ctrlWrapper');
 const createError = require('http-errors');
 
-// const getAllContacts = async (req, res) => {
-//   const contacts = await contactsService.getAllContacts();
-//   res.json({
-//     status: 200,
-//     message: 'Successfully found contacts!',
-//     data: contacts,
-//   });
-// };
-
-// const getAllContacts = async (req, res) => {
-//   const { page = 1, perPage = 10 } = req.query;
-//   const contacts = await contactsService.getAllContacts(+page, +perPage);
-//   res.json({
-//     status: 200,
-//     message: 'Successfully found contacts!',
-//     data: contacts,
-//   });
-// };
-
 const getAllContacts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
