@@ -2,13 +2,61 @@ const contactsService = require('../services/contacts');
 const ctrlWrapper = require('../utils/ctrlWrapper');
 const createError = require('http-errors');
 
-const getAllContacts = async (req, res) => {
-  const contacts = await contactsService.getAllContacts();
-  res.json({
-    status: 200,
-    message: 'Successfully found contacts!',
-    data: contacts,
-  });
+// const getAllContacts = async (req, res) => {
+//   const contacts = await contactsService.getAllContacts();
+//   res.json({
+//     status: 200,
+//     message: 'Successfully found contacts!',
+//     data: contacts,
+//   });
+// };
+
+// const getAllContacts = async (req, res) => {
+//   const { page = 1, perPage = 10 } = req.query;
+//   const contacts = await contactsService.getAllContacts(+page, +perPage);
+//   res.json({
+//     status: 200,
+//     message: 'Successfully found contacts!',
+//     data: contacts,
+//   });
+// };
+
+const getAllContacts = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.perPage) || 10;
+    const sortBy = req.query.sortBy || 'name';
+    const sortOrder = req.query.sortOrder || 'asc';
+    const isFavourite = req.query.isFavourite
+      ? req.query.isFavourite === 'true'
+      : null;
+
+    const { contacts, totalItems } = await contactsService.getAllContacts(
+      page,
+      perPage,
+      sortBy,
+      sortOrder,
+      isFavourite
+    );
+
+    const totalPages = Math.ceil(totalItems / perPage);
+
+    res.json({
+      status: 200,
+      message: 'Successfully found contacts!',
+      data: {
+        data: contacts,
+        page,
+        perPage,
+        totalItems,
+        totalPages,
+        hasPreviousPage: page > 1,
+        hasNextPage: page < totalPages,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 const createContact = async (req, res) => {
