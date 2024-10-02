@@ -1,87 +1,78 @@
-const contactsService = require('../services/contacts');
-const ctrlWrapper = require('../utils/ctrlWrapper');
-const createError = require('http-errors');
+const contactService = require('../services/contactService');
 
+// Получение всех контактов
 const getAllContacts = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const perPage = parseInt(req.query.perPage) || 10;
-    const sortBy = req.query.sortBy || 'name';
-    const sortOrder = req.query.sortOrder || 'asc';
-    const isFavourite = req.query.isFavourite
-      ? req.query.isFavourite === 'true'
-      : null;
-
-    const { contacts, totalItems } = await contactsService.getAllContacts(
-      page,
-      perPage,
-      sortBy,
-      sortOrder,
-      isFavourite
-    );
-
-    const totalPages = Math.ceil(totalItems / perPage);
-
-    res.json({
-      status: 200,
-      message: 'Successfully found contacts!',
-      data: {
-        data: contacts,
-        page,
-        perPage,
-        totalItems,
-        totalPages,
-        hasPreviousPage: page > 1,
-        hasNextPage: page < totalPages,
-      },
-    });
+    const contacts = await contactService.getAllContacts(req.user._id);
+    res.json({ status: 'success', data: contacts });
   } catch (error) {
     next(error);
   }
 };
 
-const createContact = async (req, res) => {
-  const newContact = await contactsService.createContact(req.body);
-  res.status(201).json({
-    status: 201,
-    message: 'Successfully created a contact!',
-    data: newContact,
-  });
-};
-
+// Получение контакта по ID
 const getContactById = async (req, res, next) => {
-  const contact = await contactsService.getContactById(req.params.contactId);
-  if (!contact) {
-    return next(createError(404, 'Contact not found'));
+  try {
+    const contact = await contactService.getContactById(
+      req.user._id,
+      req.params.id
+    );
+    if (!contact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+    res.json({ status: 'success', data: contact });
+  } catch (error) {
+    next(error);
   }
-  res.json({
-    status: 200,
-    message: 'Successfully found contact!',
-    data: contact,
-  });
 };
 
-const updateContact = async (req, res) => {
-  const updatedContact = await contactsService.updateContact(
-    req.params.contactId,
-    req.body
-  );
-  res.json({
-    status: 200,
-    message: 'Successfully patched a contact',
-    data: updatedContact,
-  });
+// Создание нового контакта
+const createContact = async (req, res, next) => {
+  try {
+    const contact = await contactService.createContact(req.user._id, req.body);
+    res.status(201).json({ status: 'success', data: contact });
+  } catch (error) {
+    next(error);
+  }
 };
 
-const deleteContact = async (req, res) => {
-  await contactsService.deleteContact(req.params.contactId);
-  res.status(204).send();
+// Обновление контакта
+const updateContact = async (req, res, next) => {
+  try {
+    const contact = await contactService.updateContact(
+      req.user._id,
+      req.params.id,
+      req.body
+    );
+    if (!contact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+    res.json({ status: 'success', data: contact });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Удаление контакта
+const deleteContact = async (req, res, next) => {
+  try {
+    const contact = await contactService.deleteContact(
+      req.user._id,
+      req.params.id
+    );
+    if (!contact) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {
-  getAllContacts: ctrlWrapper(getAllContacts),
-  createContact: ctrlWrapper(createContact),
-  getContactById: ctrlWrapper(getContactById),
-  updateContact: ctrlWrapper(updateContact),
-  deleteContact: ctrlWrapper(deleteContact),
+  getAllContacts,
+  getContactById,
+  createContact,
+  updateContact,
+  deleteContact,
 };

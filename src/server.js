@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const pino = require('pino-http')();
 const contactsRouter = require('./routes/contacts');
+const authRouter = require('./routes/auth');
 const errorHandler = require('./middlewares/errorHandler');
 const notFoundHandler = require('./middlewares/notFoundHandler');
 
@@ -20,6 +21,7 @@ async function setupServer() {
   });
 
   app.use('/contacts', contactsRouter);
+  app.use('/auth', authRouter);
 
   app.use(notFoundHandler);
 
