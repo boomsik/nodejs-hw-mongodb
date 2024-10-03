@@ -5,7 +5,7 @@ const registerUser = async (req, res, next) => {
     const { name, email, password } = req.body;
     const user = await authService.registerUser({ name, email, password });
     res.status(201).json({
-      status: 201,
+      status: 'success',
       message: 'Successfully registered a user!',
       data: {
         name: user.name,
@@ -20,15 +20,18 @@ const registerUser = async (req, res, next) => {
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const { accessToken, refreshToken, user } = await authService.loginUser({
+    const { accessToken, refreshToken } = await authService.loginUser({
       email,
       password,
     });
-    res.status(200).json({
-      status: 200,
-      message: 'Successfully logged in a user!',
-      data: { accessToken, refreshToken },
-    });
+    res
+      .status(200)
+      .cookie('refreshToken', refreshToken, { httpOnly: true })
+      .json({
+        status: 'success',
+        message: 'Successfully logged in a user!',
+        data: { accessToken },
+      });
   } catch (error) {
     next(error);
   }
@@ -36,10 +39,10 @@ const loginUser = async (req, res, next) => {
 
 const refreshToken = async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.cookies;
     const newAccessToken = await authService.refreshAccessToken(refreshToken);
     res.status(200).json({
-      status: 200,
+      status: 'success',
       message: 'Successfully refreshed a session!',
       data: { accessToken: newAccessToken },
     });
@@ -50,19 +53,8 @@ const refreshToken = async (req, res, next) => {
 
 const logoutUser = async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) {
-      return res.status(400).json({
-        status: 400,
-        message: 'Refresh token is required',
-      });
-    }
-
-    await authService.logoutUser(refreshToken);
-    res.status(204).json({
-      status: 204,
-      message: 'Successfully logged out!',
-    });
+    res.clearCookie('refreshToken');
+    return res.status(204).send();
   } catch (error) {
     next(error);
   }

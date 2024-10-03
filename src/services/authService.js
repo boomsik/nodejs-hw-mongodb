@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const createError = require('http-errors');
 
-const ACCESS_TOKEN_SECRET = 'yourAccessTokenSecret';
-const REFRESH_TOKEN_SECRET = 'yourRefreshTokenSecret';
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const ACCESS_TOKEN_EXPIRES_IN = '15m';
 const REFRESH_TOKEN_EXPIRES_IN = '30d';
 
@@ -17,7 +17,11 @@ const registerUser = async ({ name, email, password }) => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = await User.create({ name, email, password: hashedPassword });
 
-  return { id: newUser._id, name: newUser.name, email: newUser.email };
+  return {
+    id: newUser._id,
+    name: newUser.name,
+    email: newUser.email,
+  };
 };
 
 const generateTokens = (userId) => {
@@ -33,14 +37,12 @@ const generateTokens = (userId) => {
 
 const loginUser = async ({ email, password }) => {
   const user = await User.findOne({ email });
-
   if (!user || !(await bcrypt.compare(password, user.password))) {
     throw createError(401, 'Email or password is wrong');
   }
 
   const { accessToken, refreshToken } = generateTokens(user._id);
-
-  return { accessToken, refreshToken, user };
+  return { accessToken, refreshToken };
 };
 
 const refreshAccessToken = async (refreshToken) => {
@@ -56,13 +58,8 @@ const refreshAccessToken = async (refreshToken) => {
   }
 };
 
-const logoutUser = async (refreshToken) => {
-  return true;
-};
-
 module.exports = {
   registerUser,
   loginUser,
   refreshAccessToken,
-  logoutUser,
 };
