@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const createError = require('http-errors');
 const User = require('../models/User');
+const Session = require('../models/Session'); // Импорт модели сессии
 
 const authenticate = async (req, res, next) => {
   try {
@@ -15,6 +16,11 @@ const authenticate = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+    const session = await Session.findOne({ accessToken: token });
+    if (!session) {
+      throw createError(401, 'Session invalid or access token expired');
+    }
 
     const user = await User.findById(decoded.id);
     if (!user) {

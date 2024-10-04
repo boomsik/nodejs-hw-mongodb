@@ -40,11 +40,24 @@ const loginUser = async (req, res, next) => {
 const refreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
-    const newAccessToken = await authService.refreshAccessToken(refreshToken);
-    res.status(200).json({
-      status: 'success',
+    if (!refreshToken) {
+      throw createError(401, 'No refresh token provided');
+    }
+
+    const tokens = await authService.refreshAccessToken(refreshToken);
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+    });
+
+    res.json({
+      status: 200,
       message: 'Successfully refreshed a session!',
-      data: { accessToken: newAccessToken },
+      data: {
+        accessToken: tokens.accessToken,
+      },
     });
   } catch (error) {
     next(error);

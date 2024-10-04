@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Session = require('../models/Session');
 const createError = require('http-errors');
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
@@ -24,12 +25,22 @@ const registerUser = async ({ name, email, password }) => {
   };
 };
 
-const generateTokens = (userId) => {
+const generateTokens = async (userId) => {
   const accessToken = jwt.sign({ id: userId }, ACCESS_TOKEN_SECRET, {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   });
   const refreshToken = jwt.sign({ id: userId }, REFRESH_TOKEN_SECRET, {
     expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+  });
+
+  await Session.findOneAndDelete({ userId });
+
+  await Session.create({
+    userId,
+    accessToken,
+    refreshToken,
+    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 минут
+    refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 дней
   });
 
   return { accessToken, refreshToken };
@@ -41,25 +52,83 @@ const loginUser = async ({ email, password }) => {
     throw createError(401, 'Email or password is wrong');
   }
 
-  const { accessToken, refreshToken } = generateTokens(user._id);
-  return { accessToken, refreshToken };
+  const tokens = await generateTokens(user._id);
+  return tokens;
 };
 
+//   try {
+//     const session = await Session.findOne({ refreshToken });
+//     if (!session) {
+//       throw createError(401, 'Invalid refresh token');
+//     }
+
+//     const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+//     // Удаляем старую сессию и создаем новую
+//     await Session.findOneAndDelete({ refreshToken });
+
+//     const newAccessToken = jwt.sign({ id: decoded.id }, ACCESS_TOKEN_SECRET, {
+//       expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+//     });
+
+//     const newRefreshToken = jwt.sign({ id: decoded.id }, REFRESH_TOKEN_SECRET, {
+//       expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+//     });
+
+//     // Создаем новую сессию
+//     await Session.create({
+//       userId: decoded.id,
+//       accessToken: newAccessToken,
+//       refreshToken: newRefreshToken,
+//       accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 минут
+//       refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 дней
+//     });
+
+//     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+//   } catch (err) {
+//     throw createError(401, 'Invalid refresh token');
+//   }
+// };
 const refreshAccessToken = async (refreshToken) => {
   try {
+    const session = await Session.findOne({ refreshToken });
+    if (!session) {
+      throw createError(401, 'Invalid refresh token');
+    }
+
     const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
+
+    await Session.findOneAndDelete({ refreshToken });
+
     const newAccessToken = jwt.sign({ id: decoded.id }, ACCESS_TOKEN_SECRET, {
       expiresIn: ACCESS_TOKEN_EXPIRES_IN,
     });
 
-    return newAccessToken;
+    const newRefreshToken = jwt.sign({ id: decoded.id }, REFRESH_TOKEN_SECRET, {
+      expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+    });
+
+    await Session.create({
+      userId: decoded.id,
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 минут
+      refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 дней
+    });
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   } catch (err) {
     throw createError(401, 'Invalid refresh token');
   }
+};
+
+const logoutUser = async (refreshToken) => {
+  await Session.findOneAndDelete({ refreshToken });
 };
 
 module.exports = {
   registerUser,
   loginUser,
   refreshAccessToken,
+  logoutUser,
 };
