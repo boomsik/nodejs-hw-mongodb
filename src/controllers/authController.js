@@ -66,8 +66,11 @@ const refreshToken = async (req, res, next) => {
 
 const logoutUser = async (req, res, next) => {
   try {
+    const { refreshToken } = req.cookies;
+    await authService.logoutUser(refreshToken);
+
     res.clearCookie('refreshToken');
-    return res.status(204).send();
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

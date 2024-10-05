@@ -56,39 +56,6 @@ const loginUser = async ({ email, password }) => {
   return tokens;
 };
 
-//   try {
-//     const session = await Session.findOne({ refreshToken });
-//     if (!session) {
-//       throw createError(401, 'Invalid refresh token');
-//     }
-
-//     const decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
-
-//     // Удаляем старую сессию и создаем новую
-//     await Session.findOneAndDelete({ refreshToken });
-
-//     const newAccessToken = jwt.sign({ id: decoded.id }, ACCESS_TOKEN_SECRET, {
-//       expiresIn: ACCESS_TOKEN_EXPIRES_IN,
-//     });
-
-//     const newRefreshToken = jwt.sign({ id: decoded.id }, REFRESH_TOKEN_SECRET, {
-//       expiresIn: REFRESH_TOKEN_EXPIRES_IN,
-//     });
-
-//     // Создаем новую сессию
-//     await Session.create({
-//       userId: decoded.id,
-//       accessToken: newAccessToken,
-//       refreshToken: newRefreshToken,
-//       accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 минут
-//       refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 дней
-//     });
-
-//     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
-//   } catch (err) {
-//     throw createError(401, 'Invalid refresh token');
-//   }
-// };
 const refreshAccessToken = async (refreshToken) => {
   try {
     const session = await Session.findOne({ refreshToken });
