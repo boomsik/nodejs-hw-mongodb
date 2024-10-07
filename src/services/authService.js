@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Session = require('../models/Session');
 const createError = require('http-errors');
+const nodemailer = require('nodemailer');
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
@@ -39,8 +40,8 @@ const generateTokens = async (userId) => {
     userId,
     accessToken,
     refreshToken,
-    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 минут
-    refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 дней
+    accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000),
+    refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
 
   return { accessToken, refreshToken };
@@ -79,8 +80,8 @@ const refreshAccessToken = async (refreshToken) => {
       userId: decoded.id,
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
-      accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 минут
-      refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 дней
+      accessTokenValidUntil: new Date(Date.now() + 15 * 60 * 1000),
+      refreshTokenValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     });
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
@@ -89,8 +90,79 @@ const refreshAccessToken = async (refreshToken) => {
   }
 };
 
+// Сброс пароля
+const verifyResetTokenAndUpdatePassword = async (token, newPassword) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findOne({ email: decoded.email });
+    if (!user) {
+      throw createError(404, 'User not found!');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    return user;
+  } catch (error) {
+    throw createError(401, 'Token is expired or invalid.');
+  }
+};
+
+// Удаление сессий пользователя
+const clearUserSessions = async (userId) => {
+  await Session.deleteMany({ userId });
+};
+
+// Поиск пользователя по email
+const findUserByEmail = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw createError(404, 'User not found');
+  }
+  return user;
+};
+
+// Отправка email для сброса пароля
+const sendPasswordResetEmail = async (email, user) => {
+  const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, {
+    expiresIn: '5m',
+  });
+
+  const resetPasswordUrl = `${process.env.APP_DOMAIN}/reset-password?token=${token}`;
+
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.SMTP_FROM,
+    to: email,
+    subject: 'Password Reset Request',
+    html: `<p>To reset your password, please click the following link: <a href="${resetPasswordUrl}">Reset Password</a></p>`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Письмо успешно отправлено');
+  } catch (error) {
+    console.error('Ошибка при отправке письма:', error.message);
+    throw createError(500, 'Failed to send the email, please try again later.');
+  }
+};
+
 const logoutUser = async (refreshToken) => {
-  await Session.findOneAndDelete({ refreshToken });
+  const session = await Session.findOneAndDelete({ refreshToken });
+  if (!session) {
+    throw createError(401, 'Invalid session or already logged out.');
+  }
 };
 
 module.exports = {
@@ -98,4 +170,8 @@ module.exports = {
   loginUser,
   refreshAccessToken,
   logoutUser,
+  findUserByEmail,
+  sendPasswordResetEmail,
+  verifyResetTokenAndUpdatePassword,
+  clearUserSessions,
 };

@@ -1,4 +1,5 @@
 const authService = require('../services/authService');
+const createError = require('http-errors');
 
 const registerUser = async (req, res, next) => {
   try {
@@ -76,9 +77,53 @@ const logoutUser = async (req, res, next) => {
   }
 };
 
+const sendResetEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    console.log('Email из запроса:', email);
+
+    const user = await authService.findUserByEmail(email);
+    if (!user) {
+      throw createError(404, 'User not found!');
+    }
+
+    await authService.sendPasswordResetEmail(user.email, user);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Reset password email has been successfully sent.',
+      data: {},
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    const user = await authService.verifyResetTokenAndUpdatePassword(
+      token,
+      password
+    );
+
+    await authService.clearUserSessions(user.id);
+
+    res.status(200).json({
+      status: 200,
+      message: 'Password has been successfully reset.',
+      data: {},
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   refreshToken,
   logoutUser,
+  sendResetEmail,
+  resetPassword,
 };
