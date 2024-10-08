@@ -24,6 +24,10 @@ const contactSchema = new Schema({
     ref: 'User',
     required: true,
   },
+  createdAt: {
+    type: Date,
+    default: Date.now, // Автоматически добавляем дату создания
+  },
 });
 
 const Contact = mongoose.model('Contact', contactSchema);
