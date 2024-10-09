@@ -25,7 +25,7 @@ async function setupServer() {
   });
 
   // Swagger documentation route
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  app.use('/documentation', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
   app.use('/contacts', contactsRouter);
   app.use('/auth', authRouter);
