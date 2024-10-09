@@ -1,0 +1,17 @@
+type: object
+properties:
+  name:
+    type: string
+  email:
+    type: string
+    format: email
+  phoneNumber:
+    type: string
+  contactType:
+    type: string
+    enum:
+      - work
+      - personal
+required:
+  - name
+  - email
