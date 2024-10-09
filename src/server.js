@@ -6,6 +6,8 @@ const contactsRouter = require('./routes/contacts');
 const authRouter = require('./routes/auth');
 const errorHandler = require('./middlewares/errorHandler');
 const notFoundHandler = require('./middlewares/notFoundHandler');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./docs/swagger.json');
 
 async function setupServer() {
   const app = express();
@@ -21,6 +23,9 @@ async function setupServer() {
     res.set('Cache-Control', 'no-store');
     next();
   });
+
+  // Swagger documentation route
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
   app.use('/contacts', contactsRouter);
   app.use('/auth', authRouter);
