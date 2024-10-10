@@ -8,7 +8,7 @@ const errorHandler = require('./middlewares/errorHandler');
 const notFoundHandler = require('./middlewares/notFoundHandler');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../docs/swagger/swagger.json');
-
+const path = require('path');
 async function setupServer() {
   const app = express();
 
