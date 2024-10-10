@@ -1,31 +1,54 @@
 openapi: 3.1.0
 info:
   version: 1.0.0
-  title: API SERVER
+  title: My first api
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  description: Опис вашого додатку
+  description: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum eget lacus magna. Etiam vitae faucibus diam. Donec et malesuada ex. Praesent sollicitudin scelerisque tellus, id lobortis tellus consequat sit amet. Maecenas maximus, est id efficitur rhoncus, ipsum diam tincidunt nibh, in interdum metus purus eget enim. Donec venenatis augue id tellus molestie, vel tincidunt urna tristique. Donec aliquam sapien risus, id egestas magna vestibulum quis. Duis sapien nunc, eleifend sed euismod vitae, commodo ut dui. Curabitur ipsum odio, egestas in ultricies vitae, mattis eget dui. Etiam sed rhoncus purus, in pellentesque velit. In et arcu vitae felis rhoncus vehicula nec vel felis. Morbi sodales elementum iaculis. Curabitur eleifend metus nisl, quis tristique lectus viverra id.
+
+tags:
+  - name: 'Contacts'
+    description:
+      Endpoints for managing contacts, including creating, retrieving, updating,
+      and deleting contact information.
+
 servers:
+  - url: http://localhost:3000
   - url: https://nodejs-hw-mongodb-ubok.onrender.com
+
+paths:
+  /contacts:
+    get:
+      $ref: ../swagger/paths/contacts/get.yaml
+    post:
+      $ref: ../swagger/paths/contacts/post.yaml
+  /contacts/{contactId}:
+    get:
+      $ref: ../swagger/paths/contacts/{id}/get.yaml
+    patch:
+      $ref: ../swagger/paths/contacts/{id}/patch.yaml
+    delete:
+      $ref: ../swagger/paths/contacts/{id}/delete.yaml
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
+
   schemas:
-    Contact:
-      $ref: './swagger/components/schemas/Contact.yaml'
-paths:
-  /contacts:
-    get:
-      $ref: './swagger/paths/contacts/get.yaml'
-    post:
-      $ref: './swagger/paths/contacts/post.yaml'
-  /contacts/{contactId}:
-    get:
-      $ref: './swagger/paths/contacts/{id}/get.yaml'
-    patch:
-      $ref: './swagger/paths/contacts/{id}/patch.yaml'
-    delete:
-      $ref: './swagger/paths/contacts/{id}/delete.yaml'
+    contact:
+      $ref: ..\swagger\components\shemas\contact.yaml
+    contactAdd:
+      $ref: ..\swagger\components\shemas\contactAdd.yaml
+
+  responses:
+    '400':
+      $ref: ../swagger/components/responses/400.yaml
+    '401':
+      $ref: ../swagger/components/responses/401.yaml
+    '404':
+      $ref: ../swagger/components/responses/404.yaml
+    '500':
+      $ref: ../swagger/components/responses/500.yaml
