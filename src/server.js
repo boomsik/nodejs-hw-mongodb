@@ -7,8 +7,8 @@ const authRouter = require('./routes/auth');
 const errorHandler = require('./middlewares/errorHandler');
 const notFoundHandler = require('./middlewares/notFoundHandler');
 const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require(path.join(__dirname, './docs/swagger.json'));
-const path = require('path');
+const swaggerDocument = require('../docs/swagger.json');
+
 async function setupServer() {
   const app = express();
 
